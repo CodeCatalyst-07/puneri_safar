@@ -1,0 +1,84 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://punerisafar.internal/schemas/blackspot.schema.json",
+  "title": "PuneAccidentBlackspot",
+  "description": "Schema for high-risk traffic accident blackspots identified by Pune Traffic Police and official road safety audits.",
+  "type": "object",
+  "required": [
+    "id",
+    "name",
+    "lat",
+    "lng",
+    "evidenceLevel",
+    "sourceName",
+    "sourceUrl",
+    "sourceNote",
+    "coordinateSource",
+    "coordinatesVerified"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^bs-[a-z0-9-]+$"
+    },
+    "name": {
+      "type": "string",
+      "minLength": 3
+    },
+    "neighborhood": {
+      "type": "string"
+    },
+    "lat": {
+      "type": "number",
+      "minimum": 18.2,
+      "maximum": 18.8
+    },
+    "lng": {
+      "type": "number",
+      "minimum": 73.6,
+      "maximum": 74.2
+    },
+    "crashCount": {
+      "type": ["integer", "null"],
+      "minimum": 0
+    },
+    "period": {
+      "type": ["string", "null"]
+    },
+    "evidenceLevel": {
+      "type": "string",
+      "enum": ["counted", "listed_only"]
+    },
+    "severity": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 5
+    },
+    "hazardFactors": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "sourceName": {
+      "type": "string",
+      "minLength": 2
+    },
+    "sourceUrl": {
+      "type": "string",
+      "format": "uri"
+    },
+    "sourceNote": {
+      "type": "string",
+      "minLength": 1
+    },
+    "coordinateSource": {
+      "type": "string",
+      "enum": ["geocoded_osm", "wikidata", "estimated"]
+    },
+    "coordinatesVerified": {
+      "type": "boolean"
+    }
+  },
+  "additionalProperties": false
+}

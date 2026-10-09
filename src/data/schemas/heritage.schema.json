@@ -1,0 +1,99 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://punerisafar.internal/schemas/heritage.schema.json",
+  "title": "PuneHeritageSite",
+  "description": "Schema for historical and cultural landmarks in Pune with transparent citations.",
+  "type": "object",
+  "required": [
+    "id",
+    "name",
+    "lat",
+    "lng",
+    "era",
+    "significance",
+    "accessibility",
+    "sourceName",
+    "sourceUrl",
+    "sourceNote",
+    "coordinateSource",
+    "coordinatesVerified"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^heritage-[a-z0-9-]+$"
+    },
+    "name": {
+      "type": "string",
+      "minLength": 3
+    },
+    "neighborhood": {
+      "type": "string"
+    },
+    "lat": {
+      "type": "number",
+      "minimum": 18.2,
+      "maximum": 18.8
+    },
+    "lng": {
+      "type": "number",
+      "minimum": 73.6,
+      "maximum": 74.2
+    },
+    "era": {
+      "type": "string"
+    },
+    "yearEstablished": {
+      "type": "string"
+    },
+    "architecturalStyle": {
+      "type": "string"
+    },
+    "significance": {
+      "type": "string"
+    },
+    "accessibility": {
+      "type": "object",
+      "required": ["wheelchairAccessible", "restroomsAvailable"],
+      "properties": {
+        "wheelchairAccessible": {
+          "type": "boolean"
+        },
+        "restroomsAvailable": {
+          "type": "boolean"
+        },
+        "audioGuideAvailable": {
+          "type": "boolean"
+        }
+      },
+      "additionalProperties": false
+    },
+    "visitingHours": {
+      "type": "string"
+    },
+    "entryFeeInr": {
+      "type": "number",
+      "minimum": 0
+    },
+    "sourceName": {
+      "type": "string",
+      "minLength": 2
+    },
+    "sourceUrl": {
+      "type": "string",
+      "format": "uri"
+    },
+    "sourceNote": {
+      "type": "string",
+      "minLength": 1
+    },
+    "coordinateSource": {
+      "type": "string",
+      "enum": ["geocoded_osm", "wikidata", "estimated"]
+    },
+    "coordinatesVerified": {
+      "type": "boolean"
+    }
+  },
+  "additionalProperties": false
+}

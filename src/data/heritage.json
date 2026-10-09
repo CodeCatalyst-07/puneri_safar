@@ -1,0 +1,71 @@
+[
+  {
+    "id": "heritage-shaniwar-wada",
+    "name": "Shaniwar Wada",
+    "neighborhood": "Shaniwar Peth",
+    "lat": 18.519075,
+    "lng": 73.85545,
+    "era": "Maratha Empire (Peshwa)",
+    "yearEstablished": "1732 CE",
+    "architecturalStyle": "Maratha-Mughal Fortified Palace",
+    "significance": "Historical seat of the Peshwa prime ministers of the Maratha Empire, featuring Delhi Gate, Dilli Darwaza, and fountain foundations.",
+    "accessibility": {
+      "wheelchairAccessible": true,
+      "restroomsAvailable": true,
+      "audioGuideAvailable": true
+    },
+    "visitingHours": "9:30 AM - 5:30 PM",
+    "entryFeeInr": 25,
+    "sourceName": "Wikidata & Archaeological Survey of India",
+    "sourceUrl": "https://www.wikidata.org/wiki/Q1351060",
+    "sourceNote": "Protected monument under Archaeological Survey of India, cataloged in Wikidata item Q1351060.",
+    "coordinateSource": "wikidata",
+    "coordinatesVerified": false
+  },
+  {
+    "id": "heritage-pataleshwar-caves",
+    "name": "Pataleshwar Cave Temple",
+    "neighborhood": "Shivajinagar",
+    "lat": 18.527,
+    "lng": 73.849778,
+    "era": "Rashtrakuta Dynasty",
+    "yearEstablished": "8th Century CE",
+    "architecturalStyle": "Monolithic Rock-cut Basalt Architecture",
+    "significance": "Ancient monolithic rock-cut cave temple dedicated to Lord Shiva, carved out of a single basalt rock.",
+    "accessibility": {
+      "wheelchairAccessible": false,
+      "restroomsAvailable": true,
+      "audioGuideAvailable": false
+    },
+    "visitingHours": "8:00 AM - 6:00 PM",
+    "entryFeeInr": 0,
+    "sourceName": "Wikidata & Archaeological Survey of India",
+    "sourceUrl": "https://www.wikidata.org/wiki/Q7144204",
+    "sourceNote": "Protected rock-cut cave shrine on Jangali Maharaj Road, cataloged in Wikidata item Q7144204.",
+    "coordinateSource": "wikidata",
+    "coordinatesVerified": false
+  },
+  {
+    "id": "heritage-aga-khan-palace",
+    "name": "Aga Khan Palace",
+    "neighborhood": "Yerawada",
+    "lat": 18.5523,
+    "lng": 73.9015,
+    "era": "British Colonial / Sultan Muhammed Shah",
+    "yearEstablished": "1892 CE",
+    "architecturalStyle": "Indo-Saracenic Italianate Arches",
+    "significance": "Monument of National Importance where Mahatma Gandhi, Kasturba Gandhi, and Mahadev Desai were interned during the Quit India movement.",
+    "accessibility": {
+      "wheelchairAccessible": true,
+      "restroomsAvailable": true,
+      "audioGuideAvailable": true
+    },
+    "visitingHours": "9:00 AM - 5:30 PM",
+    "entryFeeInr": 25,
+    "sourceName": "Wikidata & Archaeological Survey of India",
+    "sourceUrl": "https://www.wikidata.org/wiki/Q2344976",
+    "sourceNote": "Declared Monument of National Importance in 2003, cataloged in Wikidata item Q2344976.",
+    "coordinateSource": "wikidata",
+    "coordinatesVerified": false
+  }
+]

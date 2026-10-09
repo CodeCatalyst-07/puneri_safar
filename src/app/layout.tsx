@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Mukta } from "next/font/google";
-import { SkipLink, Header, Footer } from "@/components";
+import { SkipLink, Header } from "@/components";
 import "./globals.css";
 
 const mukta = Mukta({
@@ -31,13 +31,12 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={`${mukta.variable} h-full antialiased`}>
-      <body className="min-h-full flex flex-col bg-ground text-ink font-sans">
+      <body className="h-[100dvh] flex flex-col bg-surface text-ink font-sans overflow-hidden">
         <SkipLink targetId="main-content" label="Skip to main content" />
         <Header />
-        <main id="main-content" tabIndex={-1} role="main" className="flex-1 flex flex-col">
+        <main id="main-content" tabIndex={-1} role="main" className="flex-1 min-h-0 flex flex-col">
           {children}
         </main>
-        <Footer />
       </body>
     </html>
   );

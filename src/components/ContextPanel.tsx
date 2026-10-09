@@ -1,13 +1,16 @@
 "use client";
 
 import React from "react";
-import { UserContext } from "@/core/types";
 import { UserContextState } from "./useUserContext";
 
 export interface ContextPanelProps {
   contextState: UserContextState;
 }
 
+/**
+ * Compact context bar placed directly above the assistant input.
+ * All controls use sentence case, inline SVGs, and minimum 44px touch targets.
+ */
 export function ContextPanel({ contextState }: ContextPanelProps) {
   const {
     context,
@@ -19,117 +22,218 @@ export function ContextPanel({ contextState }: ContextPanelProps) {
     requestCurrentLocation,
   } = contextState;
 
-  return (
-    <section
-      aria-labelledby="context-heading"
-      className="p-5 sm:p-6 rounded-xl border border-surface-border bg-surface shadow-xs space-y-5"
-    >
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-surface-border pb-4">
-        <div>
-          <h2 id="context-heading" className="text-base sm:text-lg font-bold text-foreground">
-            Your Pune Context
-          </h2>
-          <p className="text-xs sm:text-sm text-text-muted">
-            Configure your transit mode, safety posture, and physical accessibility requirements.
-          </p>
-        </div>
+  const isShivajinagar =
+    Math.abs(context.location.lat - 18.5314) < 0.001 &&
+    Math.abs(context.location.lng - 73.8446) < 0.001;
 
-        {/* GPS Button */}
-        <div className="flex flex-col items-start sm:items-end gap-1">
-          <button
-            type="button"
-            onClick={requestCurrentLocation}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-brand-primary text-brand-primary hover:bg-brand-primary hover:text-white text-xs font-semibold transition-colors min-h-[44px]"
-            aria-describedby="location-status-desc"
+  return (
+    <section aria-label="Trip settings" className="space-y-3">
+      {/* 1. Location Bar & Plain Status */}
+      <div className="flex flex-wrap items-center justify-between gap-2 p-2.5 bg-surface border border-border rounded-sm">
+        <div className="flex items-center gap-2 text-xs text-ink font-semibold">
+          <svg
+            className="w-4 h-4 text-sign-blue shrink-0"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
           >
-            <span aria-hidden="true">📍</span>
-            <span>Use My Location</span>
-          </button>
-          <span
-            id="location-status-desc"
-            className="text-[11px] text-text-muted"
-            aria-live="polite"
-          >
-            {locationStatus}
+            <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z" />
+            <circle cx="12" cy="10" r="3" />
+          </svg>
+          <span>
+            {isShivajinagar
+              ? "Near Shivajinagar"
+              : `Selected area (${context.location.lat.toFixed(3)}, ${context.location.lng.toFixed(3)})`}
           </span>
         </div>
+
+        <button
+          type="button"
+          onClick={requestCurrentLocation}
+          className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-sign-blue hover:text-ink hover:bg-ground border border-border rounded-sm transition-colors min-h-[44px]"
+        >
+          <svg
+            className="w-3.5 h-3.5"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+          >
+            <circle cx="12" cy="12" r="10" />
+            <polygon points="12 2 15 9 22 12 15 15 12 22 9 15 2 12 9 9 12 2" />
+          </svg>
+          <span>Use my location</span>
+        </button>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Travel Mode */}
-        <fieldset className="space-y-1.5">
-          <legend className="text-xs font-bold uppercase tracking-wider text-text-muted">
-            Travel Mode
-          </legend>
-          <label htmlFor="select-travel-mode" className="sr-only">
-            Select Travel Mode
-          </label>
-          <select
-            id="select-travel-mode"
-            value={context.travelMode}
-            onChange={(e) => setTravelMode(e.target.value as UserContext["travelMode"])}
-            className="w-full px-3 py-2 rounded-lg border border-surface-border bg-background text-foreground text-xs font-medium focus-visible:outline-none focus:ring-2 focus:ring-brand-primary min-h-[44px]"
-          >
-            <option value="two_wheeler">Two-Wheeler (Bike/Scooter)</option>
-            <option value="walk">Pedestrian (Walking)</option>
-            <option value="car">Car / Auto-Rickshaw</option>
-            <option value="transit">Public Transit (PMPML Bus / Metro)</option>
-          </select>
-        </fieldset>
+      {locationStatus && (
+        <p className="text-[11px] text-ink-muted px-1" aria-live="polite">
+          {locationStatus}
+        </p>
+      )}
 
-        {/* Budget */}
-        <fieldset className="space-y-1.5">
-          <legend className="text-xs font-bold uppercase tracking-wider text-text-muted">
-            Budget Tier
-          </legend>
-          <label htmlFor="select-budget" className="sr-only">
-            Select Budget Tier
-          </label>
-          <select
-            id="select-budget"
-            value={context.budget}
-            onChange={(e) => setBudget(e.target.value as UserContext["budget"])}
-            className="w-full px-3 py-2 rounded-lg border border-surface-border bg-background text-foreground text-xs font-medium focus-visible:outline-none focus:ring-2 focus:ring-brand-primary min-h-[44px]"
+      {/* 2. Controls Grid: Travel mode, Budget, Safety, Step-free */}
+      <div className="space-y-3">
+        {/* Travel Mode Segmented Control */}
+        <div>
+          <span className="block text-xs font-semibold text-ink-muted mb-1.5">Travel mode</span>
+          <div
+            role="radiogroup"
+            aria-label="Travel mode"
+            className="grid grid-cols-4 gap-1 p-1 bg-surface border border-border rounded-sm"
           >
-            <option value="low">Budget / Pocket-Friendly (₹)</option>
-            <option value="medium">Moderate / Standard (₹₹)</option>
-            <option value="high">Upscale / Premium (₹₹₹)</option>
-          </select>
-        </fieldset>
+            {(
+              [
+                {
+                  id: "walk",
+                  label: "Walk",
+                  icon: (
+                    <path d="M13 4a2 2 0 1 0 0-4 2 2 0 0 0 0 4ZM6 22l3-7 2 3v6h2v-7l-2-3 1-5 3 3h4v-2h-3l-2.5-3A2 2 0 0 0 12 6c-.5 0-1 .2-1.4.6L7 10.2V16h2v-4.5l1.5-1.5L9 15l-3 7Z" />
+                  ),
+                },
+                {
+                  id: "two_wheeler",
+                  label: "Bike",
+                  icon: (
+                    <path d="M5.5 17a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Zm13 0a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7ZM15 6h4v2h-3.2l-2.1 4H10l-1.3-2.5L12 7h2V6Z" />
+                  ),
+                },
+                {
+                  id: "car",
+                  label: "Car",
+                  icon: (
+                    <path d="M5 11l1.5-4.5A2 2 0 0 1 8.4 5h7.2a2 2 0 0 1 1.9 1.5L19 11m-14 0h14m-14 0v6a1 1 0 0 0 1 1h1a1 1 0 0 0 1-1v-1h8v1a1 1 0 0 0 1 1h1a1 1 0 0 0 1-1v-6M7 14h.01M17 14h.01" />
+                  ),
+                },
+                {
+                  id: "transit",
+                  label: "Bus/Metro",
+                  icon: (
+                    <path d="M4 6a3 3 0 0 1 3-3h10a3 3 0 0 1 3 3v9a3 3 0 0 1-3 3H7a3 3 0 0 1-3-3V6Zm2 12v3h2v-3m8 0v3h2v-3M4 11h16M7 15h.01M17 15h.01" />
+                  ),
+                },
+              ] as const
+            ).map((mode) => {
+              const active = context.travelMode === mode.id;
+              return (
+                <button
+                  key={mode.id}
+                  type="button"
+                  role="radio"
+                  aria-checked={active}
+                  onClick={() => setTravelMode(mode.id)}
+                  className={`flex flex-col sm:flex-row items-center justify-center gap-1.5 px-2 py-2 text-xs font-semibold rounded-sm transition-colors min-h-[44px] ${
+                    active ? "bg-ink text-white" : "text-ink hover:bg-ground hover:text-sign-blue"
+                  }`}
+                >
+                  <svg
+                    className="w-4 h-4 shrink-0"
+                    viewBox="0 0 24 24"
+                    fill="currentColor"
+                    aria-hidden="true"
+                  >
+                    {mode.icon}
+                  </svg>
+                  <span>{mode.label}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
 
-        {/* Safety Preference */}
-        <fieldset className="space-y-1.5">
-          <legend className="text-xs font-bold uppercase tracking-wider text-text-muted">
-            Safety Preference
-          </legend>
-          <label htmlFor="select-safety-pref" className="sr-only">
-            Select Safety Preference
-          </label>
-          <select
-            id="select-safety-pref"
-            value={context.safetyPreference}
-            onChange={(e) => setSafetyPreference(e.target.value as UserContext["safetyPreference"])}
-            className="w-full px-3 py-2 rounded-lg border border-surface-border bg-background text-foreground text-xs font-medium focus-visible:outline-none focus:ring-2 focus:ring-brand-primary min-h-[44px]"
-          >
-            <option value="cautious">Cautious (Prioritize avoiding blackspots)</option>
-            <option value="balanced">Balanced (Normal detour allowance)</option>
-            <option value="relaxed">Direct (Fastest route regardless of hazards)</option>
-          </select>
-        </fieldset>
+        {/* Budget and Safety row */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {/* Budget */}
+          <div>
+            <span className="block text-xs font-semibold text-ink-muted mb-1.5">Budget</span>
+            <div
+              role="radiogroup"
+              aria-label="Budget"
+              className="grid grid-cols-3 gap-1 p-1 bg-surface border border-border rounded-sm"
+            >
+              {(
+                [
+                  { id: "low", label: "₹" },
+                  { id: "medium", label: "₹₹" },
+                  { id: "high", label: "₹₹₹" },
+                ] as const
+              ).map((tier) => {
+                const active = context.budget === tier.id;
+                return (
+                  <button
+                    key={tier.id}
+                    type="button"
+                    role="radio"
+                    aria-checked={active}
+                    onClick={() => setBudget(tier.id)}
+                    className={`py-2 text-xs font-semibold rounded-sm text-center transition-colors min-h-[44px] ${
+                      active ? "bg-ink text-white" : "text-ink hover:bg-ground hover:text-sign-blue"
+                    }`}
+                  >
+                    {tier.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
 
-        {/* Accessibility Needs */}
-        <fieldset className="space-y-1.5 flex flex-col justify-end">
-          <legend className="sr-only">Accessibility Preferences</legend>
-          <label className="flex items-center gap-2.5 px-3 py-2.5 rounded-lg border border-surface-border bg-background hover:bg-black/5 dark:hover:bg-white/5 cursor-pointer text-xs font-medium text-foreground transition-colors min-h-[44px]">
-            <input
-              type="checkbox"
-              checked={context.accessibilityNeeds}
-              onChange={(e) => setAccessibilityNeeds(e.target.checked)}
-              className="rounded border-surface-border text-brand-primary focus:ring-brand-primary h-4 w-4"
-            />
-            <span>Step-free &amp; Wheelchair accessibility</span>
-          </label>
-        </fieldset>
+          {/* Safety Preference Toggle */}
+          <div>
+            <span className="block text-xs font-semibold text-ink-muted mb-1.5">
+              Route priority
+            </span>
+            <div
+              role="radiogroup"
+              aria-label="Route priority"
+              className="grid grid-cols-2 gap-1 p-1 bg-surface border border-border rounded-sm"
+            >
+              <button
+                type="button"
+                role="radio"
+                aria-checked={context.safetyPreference === "relaxed"}
+                onClick={() => setSafetyPreference("relaxed")}
+                className={`py-2 px-1 text-xs font-semibold rounded-sm text-center transition-colors min-h-[44px] ${
+                  context.safetyPreference === "relaxed"
+                    ? "bg-ink text-white"
+                    : "text-ink hover:bg-ground hover:text-sign-blue"
+                }`}
+              >
+                Fastest
+              </button>
+              <button
+                type="button"
+                role="radio"
+                aria-checked={context.safetyPreference === "cautious"}
+                onClick={() => setSafetyPreference("cautious")}
+                className={`py-2 px-1 text-xs font-semibold rounded-sm text-center transition-colors min-h-[44px] ${
+                  context.safetyPreference === "cautious"
+                    ? "bg-route-green text-white"
+                    : "text-ink hover:bg-ground hover:text-route-green"
+                }`}
+              >
+                Fewer known hazards
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Step-free access checkbox */}
+        <label className="flex items-center gap-3 p-2.5 bg-surface border border-border rounded-sm cursor-pointer hover:border-ink transition-colors min-h-[44px]">
+          <input
+            type="checkbox"
+            checked={context.accessibilityNeeds}
+            onChange={(e) => setAccessibilityNeeds(e.target.checked)}
+            className="w-4 h-4 text-sign-blue border-border rounded-xs focus:ring-sign-blue"
+          />
+          <span className="text-xs font-semibold text-ink">Step-free and wheelchair access</span>
+        </label>
       </div>
     </section>
   );

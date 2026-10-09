@@ -41,16 +41,12 @@ const postReportBodySchema = z.object({
     .trim()
     .min(1, "Report text is required")
     .max(300, "Report text must be 300 characters or fewer"),
-  lat: z
-    .number()
-    .refine((lat) => lat >= PUNE_BOUNDS.minLat && lat <= PUNE_BOUNDS.maxLat, {
-      message: "Latitude must be within Pune municipal boundary",
-    }),
-  lng: z
-    .number()
-    .refine((lng) => lng >= PUNE_BOUNDS.minLng && lng <= PUNE_BOUNDS.maxLng, {
-      message: "Longitude must be within Pune municipal boundary",
-    }),
+  lat: z.number().refine((lat) => lat >= PUNE_BOUNDS.minLat && lat <= PUNE_BOUNDS.maxLat, {
+    message: "Latitude must be within Pune municipal boundary",
+  }),
+  lng: z.number().refine((lng) => lng >= PUNE_BOUNDS.minLng && lng <= PUNE_BOUNDS.maxLng, {
+    message: "Longitude must be within Pune municipal boundary",
+  }),
   category: reportCategorySchema.optional(),
 });
 

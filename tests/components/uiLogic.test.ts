@@ -42,8 +42,8 @@ describe("UI Logic & Presentation Rules", () => {
     }
 
     function formatAccessibility(hasWheelchairEntrance?: boolean): string {
-      if (hasWheelchairEntrance === true) return "Wheelchair Accessible";
-      if (hasWheelchairEntrance === false) return "Not accessible";
+      if (hasWheelchairEntrance === true) return "Wheelchair accessible";
+      if (hasWheelchairEntrance === false) return "Not step-free";
       return "No data";
     }
 
@@ -62,8 +62,8 @@ describe("UI Logic & Presentation Rules", () => {
 
     it("renders undefined accessibility as 'No data'", () => {
       expect(formatAccessibility(undefined)).toBe("No data");
-      expect(formatAccessibility(true)).toBe("Wheelchair Accessible");
-      expect(formatAccessibility(false)).toBe("Not accessible");
+      expect(formatAccessibility(true)).toBe("Wheelchair accessible");
+      expect(formatAccessibility(false)).toBe("Not step-free");
     });
   });
 });

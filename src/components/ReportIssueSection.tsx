@@ -48,12 +48,13 @@ export function ReportIssueSection({
         if (res.status === 429) {
           setStatusMessage({
             type: "error",
-            text: "Report submission limit reached (3 reports per 10 minutes). Please wait before submitting again.",
+            text: "Report limit reached. You can submit up to 3 reports every 10 minutes. Please wait before submitting again.",
           });
         } else {
           setStatusMessage({
             type: "error",
-            text: json.error?.message || "Failed to submit report. Please check your connection.",
+            text:
+              json.error?.message || "Could not submit report. Check your connection and retry.",
           });
         }
         return;
@@ -64,7 +65,7 @@ export function ReportIssueSection({
         if (report.status === "corroborated") {
           setStatusMessage({
             type: "success",
-            text: "Thanks! Your report has been corroborated by nearby community reports and is now actively factored into route safety evaluations.",
+            text: "Report corroborated. Two or more people reported this hazard nearby, and it now influences route safety evaluations.",
           });
         } else {
           setStatusMessage({
@@ -78,7 +79,7 @@ export function ReportIssueSection({
     } catch {
       setStatusMessage({
         type: "error",
-        text: "Network error occurred while submitting report. Please try again.",
+        text: "Network error occurred while submitting report. Please retry.",
       });
     } finally {
       setIsSubmitting(false);
@@ -88,58 +89,49 @@ export function ReportIssueSection({
   return (
     <section
       id="report"
-      aria-labelledby="report-heading"
-      className="p-6 rounded-xl border border-surface-border bg-surface shadow-xs space-y-6 scroll-mt-20"
+      aria-label="Report a road hazard"
+      className="p-5 bg-surface border border-border rounded-sm space-y-4 scroll-mt-16"
     >
       <div>
-        <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-orange-500/10 text-orange-600 dark:text-orange-400 border border-orange-500/20">
-          <span>Community Mobility</span>
-        </div>
-        <h2 id="report-heading" className="text-xl sm:text-2xl font-bold text-foreground mt-2">
-          Report an Issue or Hazard
-        </h2>
-        <p className="text-sm text-text-muted mt-1">
-          Help fellow Pune commuters by reporting potholes, severe waterlogging, broken
-          streetlights, or road hazards.
+        <h2 className="text-base font-bold text-ink">Report a road hazard</h2>
+        <p className="text-xs text-ink-muted mt-1 leading-relaxed">
+          Report potholes, waterlogging, or broken streetlights to alert other commuters.
         </p>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} className="space-y-3.5">
         {/* Category Select */}
         <div>
           <label
             htmlFor="report-category"
-            className="block text-xs font-bold uppercase tracking-wider text-text-muted mb-1.5"
+            className="block text-xs font-semibold text-ink-muted mb-1"
           >
-            Hazard Category (Optional)
+            Hazard category
           </label>
           <select
             id="report-category"
             value={category}
             onChange={(e) => setCategory(e.target.value as ReportCategory)}
-            className="w-full sm:w-72 px-3 py-2 rounded-lg border border-surface-border bg-background text-foreground text-sm focus-visible:outline-none focus:ring-2 focus:ring-brand-primary min-h-[44px]"
+            className="w-full sm:w-64 px-3 py-2 text-xs font-semibold bg-ground border border-border rounded-sm text-ink focus:outline-hidden focus:ring-2 focus:ring-sign-blue min-h-[44px]"
           >
-            <option value="road_hazard">Road Hazard / Pothole</option>
-            <option value="waterlogging">Waterlogging / Flood</option>
-            <option value="poor_lighting">Poor Street Lighting</option>
-            <option value="crowd">Traffic Congestion / Crowd</option>
-            <option value="cleanliness">Sanitation / Waste Issue</option>
-            <option value="other">Other Civic Obstacle</option>
+            <option value="road_hazard">Road hazard or pothole</option>
+            <option value="waterlogging">Waterlogging or flood</option>
+            <option value="poor_lighting">Poor street lighting</option>
+            <option value="crowd">Traffic congestion or crowd</option>
+            <option value="cleanliness">Sanitation or debris</option>
+            <option value="other">Other road obstacle</option>
           </select>
         </div>
 
-        {/* Text Area */}
+        {/* Description Textarea */}
         <div>
-          <div className="flex items-center justify-between mb-1.5">
-            <label
-              htmlFor="report-text"
-              className="block text-xs font-bold uppercase tracking-wider text-text-muted"
-            >
-              Description <span className="text-red-500">*</span>
+          <div className="flex items-center justify-between mb-1">
+            <label htmlFor="report-text" className="block text-xs font-semibold text-ink-muted">
+              Description
             </label>
             <span
               id="report-counter"
-              className={`text-xs font-mono ${charCount > maxChars ? "text-red-600 font-bold" : "text-text-muted"}`}
+              className={`text-xs ${charCount > maxChars ? "text-crash-red font-bold" : "text-ink-muted"}`}
               aria-live="polite"
             >
               {charCount} / {maxChars}
@@ -153,44 +145,39 @@ export function ReportIssueSection({
             value={text}
             onChange={(e) => setText(e.target.value)}
             placeholder="e.g. Deep pothole near the flyover ramp causing two-wheelers to swerve abruptly"
-            aria-describedby="report-counter report-privacy-note"
-            className="w-full p-3 rounded-lg border border-surface-border bg-background text-foreground text-sm focus-visible:outline-none focus:ring-2 focus:ring-brand-primary resize-y min-h-[80px]"
+            aria-describedby="report-counter report-privacy"
+            className="w-full p-3 text-xs text-ink bg-ground border border-border rounded-sm focus:outline-hidden focus:ring-2 focus:ring-sign-blue resize-y min-h-[80px]"
           />
         </div>
 
-        {/* Location Notice */}
-        <div className="p-3 rounded-lg bg-black/5 dark:bg-white/5 border border-surface-border/50 text-xs text-text-muted flex items-start gap-2">
-          <span aria-hidden="true" className="text-brand-primary font-bold">
-            📍
-          </span>
-          <div>
-            <span>Attaching report near location: </span>
-            <strong className="text-foreground">
+        {/* Location Notice & Privacy Note */}
+        <div
+          id="report-privacy"
+          className="p-2.5 bg-ground border border-border text-xs text-ink space-y-1"
+        >
+          <p>
+            Attaching report near coordinates:{" "}
+            <strong>
               {currentLocation.lat.toFixed(3)}, {currentLocation.lng.toFixed(3)}
             </strong>
-            <p className="mt-0.5 text-text-muted/80">
-              Coordinates are rounded to 3 decimal places (~100 m) to protect your location privacy.
-            </p>
-          </div>
+          </p>
+          <p className="text-ink-muted text-[11px] leading-relaxed">
+            Coordinates are rounded to 3 decimal places (~100m) to preserve your privacy. Do not
+            include personal names or phone numbers; reports are anonymous.
+          </p>
         </div>
 
-        {/* Privacy Note */}
-        <p id="report-privacy-note" className="text-xs text-text-muted leading-relaxed">
-          <strong>Privacy note:</strong> Do not include names, phone numbers, or vehicle numbers.
-          All reports are anonymous.
-        </p>
-
-        {/* Status Message */}
+        {/* Status Announcement Banner */}
         {statusMessage && (
           <div
             role="status"
             aria-live="polite"
-            className={`p-3.5 rounded-lg text-xs font-medium border leading-relaxed ${
+            className={`p-3 text-xs font-medium border-l-4 ${
               statusMessage.type === "success"
-                ? "bg-emerald-50 dark:bg-emerald-950/20 text-emerald-900 dark:text-emerald-200 border-emerald-300 dark:border-emerald-800"
+                ? "bg-white border-l-route-green text-ink"
                 : statusMessage.type === "info"
-                  ? "bg-sky-50 dark:bg-sky-950/20 text-sky-900 dark:text-sky-200 border-sky-300 dark:border-sky-800"
-                  : "bg-red-50 dark:bg-red-950/20 text-red-900 dark:text-red-200 border-red-300 dark:border-red-800"
+                  ? "bg-white border-l-sign-blue text-ink"
+                  : "bg-white border-l-crash-red text-crash-red"
             }`}
           >
             {statusMessage.text}
@@ -202,9 +189,9 @@ export function ReportIssueSection({
           <button
             type="submit"
             disabled={isSubmitting || !text.trim() || charCount > maxChars}
-            className="inline-flex items-center justify-center px-5 py-2.5 rounded-lg bg-brand-primary text-white text-sm font-semibold hover:bg-brand-primary-hover disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-xs min-h-[44px]"
+            className="px-5 py-2.5 text-xs font-semibold bg-ink text-white rounded-sm hover:bg-sign-blue disabled:opacity-50 disabled:cursor-not-allowed transition-colors min-h-[44px]"
           >
-            {isSubmitting ? "Submitting securely..." : "Submit Hazard Report"}
+            {isSubmitting ? "Submitting" : "Send report"}
           </button>
         </div>
       </form>

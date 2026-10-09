@@ -11,7 +11,7 @@ export interface AssistantSectionProps {
   onSelectRoute: (type: "fastest" | "fewest_hazards") => void;
 }
 
-const EXAMPLE_CHIPS = [
+const EXAMPLE_QUESTIONS = [
   "Cheap vegetarian dinner near me tonight",
   "Safer way from Katraj to Hinjewadi",
   "Heritage places to visit",
@@ -39,7 +39,6 @@ export function AssistantSection({
     const textToSend = messageText.trim();
     if (!textToSend) return;
 
-    // Abort previous in-flight request if user submits again
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
     }
@@ -65,10 +64,12 @@ export function AssistantSection({
       if (!res.ok) {
         if (res.status === 429) {
           setErrorMessage(
-            "Query rate limit reached (10 queries per minute). Please pause briefly before asking again."
+            "Query limit reached. Please wait 60 seconds before asking another question."
           );
         } else {
-          setErrorMessage(json.error?.message || "Failed to process query. Please try again.");
+          setErrorMessage(
+            json.error?.message || "Could not process request. Please check your query and retry."
+          );
         }
         return;
       }
@@ -78,18 +79,15 @@ export function AssistantSection({
         setResponse(assistantData);
         onAssistantResponse?.(assistantData);
 
-        // Accessibility: Move focus to results area (WCAG 2.4.3 Focus Order)
         setTimeout(() => {
           resultsContainerRef.current?.focus();
         }, 100);
       }
     } catch (err: unknown) {
       if (err instanceof Error && err.name === "AbortError") {
-        return; // Normal cancellation
+        return;
       }
-      setErrorMessage(
-        "Network error occurred while contacting assistant. Please verify your connection."
-      );
+      setErrorMessage("Network connection failed. Please verify your internet connection.");
     } finally {
       setIsLoading(false);
     }
@@ -100,72 +98,24 @@ export function AssistantSection({
     handleSend(query);
   };
 
-  const handleChipClick = (chipText: string) => {
-    setQuery(chipText);
-    handleSend(chipText);
+  const handleChipClick = (questionText: string) => {
+    setQuery(questionText);
+    handleSend(questionText);
   };
 
   return (
-    <div className="space-y-6">
-      {/* Query Input Section */}
+    <div className="space-y-4">
+      {/* 1. Input Box & Ask Button */}
       <section
         id="explore"
-        aria-labelledby="assistant-box-heading"
-        className="p-6 rounded-xl border border-surface-border bg-surface shadow-xs space-y-4"
+        aria-label="Question prompt"
+        className="bg-surface border border-border p-3.5 rounded-sm"
       >
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-          <div>
-            <h2
-              id="assistant-box-heading"
-              className="text-xl sm:text-2xl font-bold text-foreground"
-            >
-              Ask Puneri Safar
-            </h2>
-            <p className="text-sm text-text-muted">
-              Get context-aware recommendations, hazard-aware routing, and cultural heritage
-              insights.
-            </p>
-          </div>
-
-          {response?.weather && (
-            <div
-              className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-sky-50 dark:bg-sky-950/40 text-sky-900 dark:text-sky-200 border border-sky-200 dark:border-sky-800 text-xs font-medium self-start sm:self-auto"
-              aria-label={`Current Pune weather: ${response.weather.tempC} degrees Celsius, ${response.weather.conditionCode}`}
-            >
-              <span aria-hidden="true">🌤️</span>
-              <span>
-                <b>{response.weather.tempC}°C</b> &bull;{" "}
-                {response.weather.conditionCode.replace(/_/g, " ")}
-              </span>
-            </div>
-          )}
-        </div>
-
-        {/* Example Chips */}
-        <div
-          className="flex flex-wrap items-center gap-2"
-          role="group"
-          aria-label="Quick example questions"
-        >
-          <span className="text-xs font-semibold text-text-muted">Try:</span>
-          {EXAMPLE_CHIPS.map((chip) => (
-            <button
-              key={chip}
-              type="button"
-              onClick={() => handleChipClick(chip)}
-              className="px-3 py-1 rounded-full text-xs font-medium bg-black/5 dark:bg-white/5 hover:bg-brand-primary/10 hover:text-brand-primary border border-surface-border transition-colors text-foreground min-h-[36px]"
-            >
-              {chip}
-            </button>
-          ))}
-        </div>
-
-        {/* Input Form */}
-        <form onSubmit={handleFormSubmit} className="space-y-3">
-          <div className="relative">
-            <label htmlFor="assistant-input" className="sr-only">
-              Ask Puneri Safar a question
-            </label>
+        <form onSubmit={handleFormSubmit} className="space-y-2">
+          <label htmlFor="assistant-input" className="block text-xs font-semibold text-ink-muted">
+            Ask about places, routes, or road conditions
+          </label>
+          <div className="flex gap-2">
             <input
               id="assistant-input"
               type="text"
@@ -173,221 +123,228 @@ export function AssistantSection({
               maxLength={maxChars}
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="e.g. Safer way from Katraj to Hinjewadi, or cheap vegetarian dinner near me"
+              placeholder="e.g. Safer way from Katraj to Hinjewadi"
               aria-describedby="assistant-counter"
-              className="w-full px-4 py-3 pr-28 rounded-xl border border-surface-border bg-background text-foreground text-sm focus-visible:outline-none focus:ring-2 focus:ring-brand-primary min-h-[48px]"
+              className="flex-1 px-3 py-2 text-sm text-ink bg-ground border border-border rounded-sm focus:outline-hidden focus:ring-2 focus:ring-sign-blue min-h-[44px]"
             />
-            <div className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-2">
-              <span
-                id="assistant-counter"
-                className="text-xs font-mono text-text-muted hidden sm:inline"
-                aria-hidden="true"
-              >
-                {charCount}/{maxChars}
-              </span>
-              <button
-                type="submit"
-                disabled={isLoading || !query.trim()}
-                className="px-4 py-2 rounded-lg bg-brand-primary text-white text-xs font-bold hover:bg-brand-primary-hover disabled:opacity-50 disabled:cursor-not-allowed transition-colors shadow-xs min-h-[38px]"
-              >
-                {isLoading ? "Searching..." : "Send"}
-              </button>
-            </div>
+            <button
+              type="submit"
+              disabled={isLoading || !query.trim()}
+              className="px-5 py-2 text-xs font-semibold bg-ink text-white rounded-sm hover:bg-sign-blue disabled:opacity-50 disabled:cursor-not-allowed transition-colors min-h-[44px]"
+            >
+              {isLoading ? "Searching" : "Ask"}
+            </button>
+          </div>
+          <div className="flex justify-end text-[11px] text-ink-muted">
+            <span id="assistant-counter" aria-hidden="true">
+              {charCount} / {maxChars}
+            </span>
           </div>
         </form>
 
-        {/* Error / Rate Limit Banner */}
         {errorMessage && (
           <div
             role="alert"
             aria-live="polite"
-            className="p-3.5 rounded-lg text-xs font-medium bg-red-50 dark:bg-red-950/20 text-red-900 dark:text-red-200 border border-red-300 dark:border-red-800 leading-relaxed"
+            className="mt-3 p-2.5 text-xs text-crash-red bg-white border-l-4 border-crash-red font-medium"
           >
             {errorMessage}
           </div>
         )}
       </section>
 
-      {/* Results Area (Live Region for Screen Readers) */}
+      {/* 2. Empty State (Invitation, not decoration) */}
+      {!response && !isLoading && (
+        <section
+          aria-label="Suggested questions"
+          className="bg-surface border border-border p-4 rounded-sm space-y-3"
+        >
+          <div>
+            <h2 lang="mr" className="text-lg font-extrabold text-ink">
+              कुठे जायचंय?
+            </h2>
+            <p className="text-xs font-semibold text-ink-muted">Where do you want to go?</p>
+            <p className="text-xs text-ink-muted mt-1 leading-relaxed">
+              Explore, experience and navigate Pune &mdash; smarter and safer.
+            </p>
+          </div>
+
+          <div className="space-y-1.5 pt-1">
+            {EXAMPLE_QUESTIONS.map((item) => (
+              <button
+                key={item}
+                type="button"
+                onClick={() => handleChipClick(item)}
+                className="w-full text-left p-2.5 text-xs font-semibold text-ink bg-ground hover:bg-white hover:text-sign-blue border border-border rounded-sm transition-colors min-h-[44px]"
+              >
+                {item}
+              </button>
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* 3. Results Container (aria-live="polite") */}
       <section
         id="assistant-results"
         ref={resultsContainerRef}
         tabIndex={-1}
         role="region"
-        aria-labelledby="results-heading"
+        aria-label="Guidance and results"
         aria-live="polite"
-        className="space-y-6 outline-none"
+        className="space-y-4 outline-hidden"
       >
-        <h2 id="results-heading" className="sr-only">
-          Assistant Results and Guidance
-        </h2>
-
         {response && (
-          <div className="p-6 rounded-xl border border-surface-border bg-surface shadow-xs space-y-6">
-            {/* Header: Badge & Status */}
-            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-surface-border/60 pb-4">
-              <div className="flex items-center gap-2">
-                <span
-                  className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${
-                    response.usedLlm
-                      ? "bg-purple-100 dark:bg-purple-950/40 text-purple-800 dark:text-purple-300 border border-purple-300"
-                      : "bg-emerald-100 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300 border border-emerald-300"
-                  }`}
-                >
-                  <span aria-hidden="true">{response.usedLlm ? "✦" : "✓"}</span>
-                  <span>{response.usedLlm ? "Answered with Gemini" : "Answered by rules"}</span>
-                </span>
-                <span className="text-xs text-text-muted">
-                  {response.usedLlm
-                    ? "Multi-turn tool routing backed by grounded Pune civic facts"
-                    : "Deterministic rules evaluation with zero LLM hallucination"}
-                </span>
-              </div>
+          <div className="space-y-4">
+            {/* Header: Grounded status & Weather */}
+            <div className="bg-surface border border-border p-3 rounded-sm flex flex-wrap items-center justify-between gap-2 text-xs">
+              <span className="font-semibold text-ink-muted">
+                {response.usedLlm ? "Answered with Gemini" : "Answered by rules"}
+              </span>
 
-              {response.sources.length > 0 && (
-                <div className="text-xs text-text-muted">
-                  Sources:{" "}
-                  <span className="font-medium text-foreground">{response.sources.join(", ")}</span>
-                </div>
+              {response.weather && (
+                <span className="text-ink font-medium flex items-center gap-1.5">
+                  <svg
+                    className="w-4 h-4 text-sign-blue"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                  >
+                    <circle cx="12" cy="12" r="4" />
+                    <path d="M12 2v2m0 16v2M4.93 4.93l1.41 1.41m11.32 11.32l1.41 1.41M2 12h2m16 0h2M6.34 17.66l-1.41 1.41M19.07 4.93l-1.41 1.41" />
+                  </svg>
+                  <span>
+                    Pune weather: {response.weather.tempC}°C,{" "}
+                    {response.weather.conditionCode.replace(/_/g, " ")}
+                  </span>
+                </span>
               )}
             </div>
 
-            {/* Natural Language Answer */}
-            <div className="prose prose-sm dark:prose-invert max-w-none">
-              <div className="text-base text-foreground font-medium leading-relaxed whitespace-pre-line">
+            {/* Answer Text */}
+            <div className="bg-surface border border-border p-4 rounded-sm">
+              <p className="text-sm text-ink leading-relaxed whitespace-pre-line font-normal">
                 {response.answer}
-              </div>
+              </p>
             </div>
 
-            {/* Caveats & Honesty Notes */}
+            {/* Caveats with Amber Left Edge */}
             {response.caveats.length > 0 && (
-              <div className="p-3.5 rounded-lg bg-amber-50 dark:bg-amber-950/20 border border-amber-300/60 dark:border-amber-800/60 space-y-1">
-                <div className="flex items-center gap-1.5 text-xs font-bold text-amber-900 dark:text-amber-200">
-                  <span aria-hidden="true">⚠️</span>
-                  <span>Data Honesty &amp; Transparency Caveats</span>
+              <div className="p-3 bg-surface border border-border border-l-4 border-l-caution rounded-sm space-y-1.5 text-xs text-ink">
+                <div className="font-bold flex items-center gap-1.5 text-ink">
+                  <svg
+                    className="w-4 h-4 text-ink shrink-0"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                  >
+                    <path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z" />
+                    <line x1="12" y1="9" x2="12" y2="13" />
+                    <line x1="12" y1="17" x2="12.01" y2="17" />
+                  </svg>
+                  <span>Important road safety notes</span>
                 </div>
-                <ul className="list-disc list-inside text-xs text-amber-900/90 dark:text-amber-200/90 space-y-0.5">
-                  {response.caveats.map((caveat, i) => (
-                    <li key={i}>{caveat}</li>
+                <ul className="space-y-1 text-ink-muted list-disc list-inside">
+                  {response.caveats.map((c, i) => (
+                    <li key={i}>{c}</li>
                   ))}
-                  <li className="font-semibold">
-                    Important: No recorded hazards along a corridor is not the same as guaranteed
-                    safety. Always remain vigilant.
+                  <li className="font-semibold text-ink">
+                    No recorded hazards is not the same as safe. Always check active road
+                    conditions.
                   </li>
                 </ul>
               </div>
             )}
 
-            {/* ROUTE COMPARISON RESULTS */}
+            {/* ROUTE COMPARISON (Two-Row Road Sign Comparison) */}
             {response.routes && (
-              <div className="space-y-4 pt-2">
+              <div className="bg-surface border border-border p-4 rounded-sm space-y-3">
                 <div className="flex items-center justify-between">
-                  <h3 className="text-base font-bold text-foreground">
-                    Corridor Safety Evaluation
-                  </h3>
-                  <span className="text-xs text-text-muted">
-                    Evaluated against documented Pune Police crash blackspots
-                  </span>
+                  <h3 className="text-sm font-bold text-ink">Route options</h3>
+                  <span className="text-xs text-ink-muted">Compared against crash-prone spots</span>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {/* Option 1: Fastest Route */}
+                <div className="space-y-2">
+                  {/* Row 1: Fastest Route */}
                   <button
                     type="button"
                     onClick={() => onSelectRoute("fastest")}
-                    className={`text-left p-4 rounded-xl border transition-all ${
+                    className={`w-full text-left p-3 border rounded-sm transition-colors ${
                       selectedRouteType === "fastest"
-                        ? "border-blue-600 bg-blue-50/50 dark:bg-blue-950/20 ring-2 ring-blue-500"
-                        : "border-surface-border bg-background hover:border-blue-400"
+                        ? "border-route-fast bg-ground"
+                        : "border-border bg-surface hover:bg-ground"
                     }`}
                   >
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-bold uppercase tracking-wider text-blue-600">
-                        Option A &bull; Fastest Corridor
-                      </span>
+                    <div className="flex items-center justify-between text-xs font-semibold">
+                      <span className="text-route-fast">Option 1: Fastest route</span>
                       {selectedRouteType === "fastest" && (
-                        <span className="text-xs font-bold text-blue-600 bg-blue-100 dark:bg-blue-900/50 px-2 py-0.5 rounded">
-                          Selected on map
+                        <span className="text-[11px] font-bold text-route-fast bg-white px-2 py-0.5 border border-route-fast">
+                          Shown on map
                         </span>
                       )}
                     </div>
-                    <div className="mt-2 flex items-baseline gap-2">
-                      <span className="text-2xl font-black text-foreground">
+                    <div className="mt-1.5 flex items-baseline gap-3 text-xs text-ink">
+                      <span className="text-lg font-extrabold">
                         {Math.round(response.routes.fastest.durationSeconds / 60)} min
                       </span>
-                      <span className="text-xs text-text-muted">
-                        ({(response.routes.fastest.distanceMeters / 1000).toFixed(1)} km)
+                      <span>{(response.routes.fastest.distanceMeters / 1000).toFixed(1)} km</span>
+                      <span className="text-ink-muted">
+                        Hazard index: {response.routes.fastest.hazardIndex}/100
                       </span>
                     </div>
-
-                    <div className="mt-3 text-xs space-y-1">
-                      <div>
-                        Known Hazard Index:{" "}
-                        <span className="font-bold text-red-600">
-                          {response.routes.fastest.hazardIndex}/100
-                        </span>
-                      </div>
-                      <div className="text-text-muted">
-                        {response.routes.fastest.breakdown.length > 0
-                          ? `${response.routes.fastest.breakdown.length} documented hazard corridor(s) matched`
-                          : "No documented blackspots in corridor buffer"}
-                      </div>
-                    </div>
+                    <p className="mt-1 text-xs text-ink-muted">
+                      {response.routes.fastest.breakdown.length > 0
+                        ? `${response.routes.fastest.breakdown.length} documented crash-prone spot(s) along route`
+                        : "No documented crash-prone spots along route buffer"}
+                    </p>
                   </button>
 
-                  {/* Option 2: Fewest Known Hazards */}
+                  {/* Row 2: Fewer Known Hazards Route */}
                   <button
                     type="button"
                     onClick={() => onSelectRoute("fewest_hazards")}
-                    className={`text-left p-4 rounded-xl border transition-all ${
+                    className={`w-full text-left p-3 border rounded-sm transition-colors ${
                       selectedRouteType === "fewest_hazards"
-                        ? "border-emerald-600 bg-emerald-50/50 dark:bg-emerald-950/20 ring-2 ring-emerald-500"
-                        : "border-surface-border bg-background hover:border-emerald-400"
+                        ? "border-route-green bg-ground"
+                        : "border-border bg-surface hover:bg-ground"
                     }`}
                   >
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-bold uppercase tracking-wider text-emerald-600">
-                        Option B &bull; Fewest Known Hazards
-                      </span>
+                    <div className="flex items-center justify-between text-xs font-semibold">
+                      <span className="text-route-green">Option 2: Fewer known hazards</span>
                       {selectedRouteType === "fewest_hazards" && (
-                        <span className="text-xs font-bold text-emerald-600 bg-emerald-100 dark:bg-emerald-900/50 px-2 py-0.5 rounded">
-                          Selected on map
+                        <span className="text-[11px] font-bold text-route-green bg-white px-2 py-0.5 border border-route-green">
+                          Shown on map
                         </span>
                       )}
                     </div>
-                    <div className="mt-2 flex items-baseline gap-2">
-                      <span className="text-2xl font-black text-foreground">
+                    <div className="mt-1.5 flex items-baseline gap-3 text-xs text-ink">
+                      <span className="text-lg font-extrabold text-route-green">
                         {Math.round(response.routes.fewestHazards.durationSeconds / 60)} min
                       </span>
-                      <span className="text-xs text-text-muted">
-                        ({(response.routes.fewestHazards.distanceMeters / 1000).toFixed(1)} km)
+                      <span>
+                        {(response.routes.fewestHazards.distanceMeters / 1000).toFixed(1)} km
+                      </span>
+                      <span className="text-ink-muted">
+                        Hazard index: {response.routes.fewestHazards.hazardIndex}/100
                       </span>
                     </div>
-
-                    <div className="mt-3 text-xs space-y-1">
-                      <div>
-                        Known Hazard Index:{" "}
-                        <span className="font-bold text-emerald-600">
-                          {response.routes.fewestHazards.hazardIndex}/100
-                        </span>
-                      </div>
-                      <div className="text-text-muted">
-                        {response.routes.fewestHazards.breakdown.length > 0
-                          ? `${response.routes.fewestHazards.breakdown.length} documented hazard corridor(s)`
-                          : "Zero documented blackspots on detour"}
-                      </div>
-                    </div>
+                    <p className="mt-1 text-xs text-ink-muted">
+                      {response.routes.fewestHazards.breakdown.length > 0
+                        ? `${response.routes.fewestHazards.breakdown.length} documented crash-prone spot(s)`
+                        : "Zero documented crash-prone spots on detour"}
+                    </p>
                   </button>
                 </div>
 
                 {/* Tradeoff Explanation */}
-                <div className="p-3.5 rounded-lg bg-black/5 dark:bg-white/5 border border-surface-border text-xs leading-relaxed">
-                  <strong>Tradeoff Analysis: </strong>
+                <div className="p-2.5 bg-ground border border-border text-xs text-ink leading-relaxed">
+                  <strong>Tradeoff: </strong>
                   {response.routes.tradeoff.minutesAdded > 0 ? (
                     <span>
-                      The safer corridor adds <b>{response.routes.tradeoff.minutesAdded} minutes</b>{" "}
-                      of travel time but avoids{" "}
-                      <b>{response.routes.tradeoff.hazardPointsAvoided} hazard points</b>.{" "}
+                      Adds {response.routes.tradeoff.minutesAdded} minutes of travel time and avoids{" "}
+                      {response.routes.tradeoff.hazardPointsAvoided} hazard points.{" "}
                       {response.routes.tradeoff.rationale}
                     </span>
                   ) : (
@@ -395,31 +352,27 @@ export function AssistantSection({
                   )}
                 </div>
 
-                {/* Detailed Hazard Contributors for Selected Route */}
+                {/* Active Route Hazard Breakdown in Text */}
                 {(() => {
-                  const activeRoute =
+                  const active =
                     selectedRouteType === "fastest"
                       ? response.routes.fastest
                       : response.routes.fewestHazards;
-                  if (!activeRoute.breakdown || activeRoute.breakdown.length === 0) return null;
-
+                  if (!active.breakdown || active.breakdown.length === 0) return null;
                   return (
-                    <div className="mt-3 p-3 rounded-lg border border-surface-border bg-background space-y-2 text-xs">
-                      <span className="font-bold text-foreground">
-                        Documented Hazards along Selected Route ({activeRoute.breakdown.length}):
+                    <div className="pt-2 border-t border-border space-y-1.5 text-xs">
+                      <span className="font-semibold text-ink">
+                        Documented crash-prone spots on selected route:
                       </span>
                       <ul className="space-y-1">
-                        {activeRoute.breakdown.map((item, idx) => (
+                        {active.breakdown.map((item, idx) => (
                           <li
                             key={idx}
-                            className="flex items-start justify-between gap-2 text-text-muted"
+                            className="flex items-baseline justify-between gap-2 text-ink-muted"
                           >
-                            <div>
-                              <strong className="text-red-600">▲ {item.name}</strong> &mdash;{" "}
-                              <span>{item.distanceMeters}m from route path</span>
-                            </div>
-                            <span className="text-[11px] font-mono text-text-muted/80">
-                              {item.source}
+                            <span className="text-crash-red font-semibold">{item.name}</span>
+                            <span className="text-[11px]">
+                              {item.distanceMeters}m from corridor
                             </span>
                           </li>
                         ))}
@@ -430,103 +383,73 @@ export function AssistantSection({
               </div>
             )}
 
-            {/* PLACES RECOMMENDATIONS */}
+            {/* PLACES LIST (List rows separated by dividers, NOT cards) */}
             {response.places && response.places.length > 0 && (
-              <div className="space-y-4 pt-2">
-                <h3 className="text-base font-bold text-foreground">
-                  Ranked Places in Pune ({response.places.length})
-                </h3>
+              <div className="bg-surface border border-border p-4 rounded-sm space-y-3">
+                <div className="flex items-center justify-between border-b border-border pb-2">
+                  <h3 className="text-sm font-bold text-ink">Places ({response.places.length})</h3>
+                  <span className="text-xs text-ink-muted">Ranked by Bayesian review score</span>
+                </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="divide-y divide-border">
                   {response.places.map((rp, idx) => {
                     const priceString =
-                      rp.place.priceLevel !== undefined && rp.place.priceLevel !== null
-                        ? "₹".repeat(Math.max(1, rp.place.priceLevel))
+                      rp.place.priceLevel !== undefined &&
+                      rp.place.priceLevel !== null &&
+                      rp.place.priceLevel > 0
+                        ? "₹".repeat(rp.place.priceLevel)
                         : "No data";
 
                     const wheelchairEntrance = rp.place.accessibility?.wheelchairEntrance;
-                    const accessibilityLabel =
+                    const accessText =
                       wheelchairEntrance === true
-                        ? "Wheelchair Accessible"
+                        ? "Wheelchair accessible"
                         : wheelchairEntrance === false
-                          ? "Not accessible"
+                          ? "Not step-free"
                           : "No data";
 
                     return (
                       <article
                         key={rp.place.id || idx}
-                        className="p-4 rounded-xl border border-surface-border bg-background flex flex-col justify-between hover:border-brand-primary/40 transition-colors shadow-xs"
+                        className="py-3 first:pt-0 last:pb-0 space-y-1.5"
                       >
-                        <div>
-                          <div className="flex items-start justify-between gap-2">
-                            <div>
-                              <span className="text-xs font-bold text-brand-primary">
-                                #{idx + 1} Recommendation
-                              </span>
-                              <h4 className="text-base font-bold text-foreground mt-0.5">
-                                {rp.place.name}
-                              </h4>
-                            </div>
-                            <div className="text-right">
-                              <span className="text-lg font-black text-brand-primary">
-                                {rp.score}
-                              </span>
-                              <span className="text-xs text-text-muted">/100</span>
-                            </div>
+                        <div className="flex items-start justify-between gap-2">
+                          <div>
+                            <h4 className="text-sm font-bold text-ink">{rp.place.name}</h4>
+                            <p className="text-xs text-ink-muted mt-0.5">
+                              Rating{" "}
+                              {rp.place.rating !== undefined ? `${rp.place.rating}/5` : "No data"},
+                              Price {priceString}, {accessText}
+                            </p>
                           </div>
-
-                          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 mt-2 text-xs text-text-muted">
-                            <span>
-                              Rating:{" "}
-                              <b>
-                                {rp.place.rating !== undefined ? `${rp.place.rating}/5` : "No data"}
-                              </b>
-                            </span>
-                            <span>&bull;</span>
-                            <span>
-                              Price: <b>{priceString}</b>
-                            </span>
-                            <span>&bull;</span>
-                            <span>
-                              Access: <b>{accessibilityLabel}</b>
-                            </span>
+                          <div className="text-right shrink-0">
+                            <span className="text-sm font-extrabold text-ink">{rp.score}</span>
+                            <span className="text-xs text-ink-muted">/100</span>
                           </div>
-
-                          {rp.reasons.length > 0 && (
-                            <div className="mt-3 pt-2 border-t border-surface-border/50 text-xs text-text-muted space-y-1">
-                              {rp.reasons.slice(0, 3).map((reason, rIdx) => (
-                                <p key={rIdx} className="flex items-center gap-1.5">
-                                  <span aria-hidden="true" className="text-brand-emerald">
-                                    ✓
-                                  </span>
-                                  <span>{reason}</span>
-                                </p>
-                              ))}
-                            </div>
-                          )}
                         </div>
 
-                        {/* "Why This?" Disclosure per Criterion */}
-                        {rp.breakdown && rp.breakdown.length > 0 && (
-                          <details className="mt-4 pt-3 border-t border-surface-border text-xs group">
-                            <summary className="font-semibold text-brand-primary cursor-pointer hover:underline list-none flex items-center justify-between">
-                              <span>Why this? (MCDA Criteria Breakdown)</span>
-                              <span className="text-text-muted group-open:rotate-180 transition-transform">
-                                ▼
-                              </span>
-                            </summary>
-                            <div className="mt-2.5 space-y-1.5 p-2.5 rounded bg-black/5 dark:bg-white/5">
-                              {rp.breakdown.map((crit, cIdx) => (
-                                <div key={cIdx} className="flex items-center justify-between gap-2">
-                                  <span className="text-text-muted">{crit.criterion}:</span>
-                                  <span className="font-medium text-foreground text-right">
-                                    {crit.reason}
-                                  </span>
-                                </div>
-                              ))}
-                            </div>
-                          </details>
+                        {rp.reasons.length > 0 && (
+                          <p className="text-xs text-ink-muted leading-relaxed">
+                            {rp.reasons.slice(0, 2).join(". ")}
+                          </p>
                         )}
+
+                        <div className="flex items-center justify-between text-[11px] text-ink-muted pt-1">
+                          <span>Google Maps data</span>
+                          {rp.breakdown && rp.breakdown.length > 0 && (
+                            <details className="inline-block text-sign-blue hover:underline cursor-pointer">
+                              <summary className="font-semibold list-none">Why this?</summary>
+                              <div className="mt-1.5 p-2 bg-ground text-ink border border-border space-y-1">
+                                {rp.breakdown.map((crit, cIdx) => (
+                                  <div key={cIdx} className="flex justify-between gap-2">
+                                    <span className="text-ink-muted">{crit.criterion}:</span>
+                                    <span className="font-medium text-right">{crit.reason}</span>
+                                  </div>
+                                ))}
+                              </div>
+                            </details>
+                          )}
+                        </div>
                       </article>
                     );
                   })}

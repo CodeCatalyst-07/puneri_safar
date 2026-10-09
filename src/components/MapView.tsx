@@ -16,6 +16,7 @@ export interface MapViewProps {
   };
   selectedRouteType?: "fastest" | "fewest_hazards";
   onSelectRoute?: (type: "fastest" | "fewest_hazards") => void;
+  className?: string;
 }
 
 interface BlackspotPoint {
@@ -87,6 +88,7 @@ export default function MapView({
   routes,
   selectedRouteType = "fewest_hazards",
   onSelectRoute,
+  className = "",
 }: MapViewProps) {
   const mapContainerRef = useRef<HTMLDivElement>(null);
   const mapInstanceRef = useRef<GoogleMapInstance | null>(null);
@@ -103,10 +105,10 @@ export default function MapView({
 
   const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_KEY;
   const effectiveError = !apiKey
-    ? "Google Maps public key not configured (NEXT_PUBLIC_GOOGLE_MAPS_KEY missing)."
+    ? "Google Maps browser API key not configured (NEXT_PUBLIC_GOOGLE_MAPS_KEY missing)."
     : loadError;
 
-  // Layer Toggles
+  // Layer Toggles (Plain sentence case, road-sign terminology)
   const [showBlackspots, setShowBlackspots] = useState(true);
   const [showCitizenReports, setShowCitizenReports] = useState(true);
 
@@ -114,7 +116,7 @@ export default function MapView({
   const [blackspots, setBlackspots] = useState<BlackspotPoint[]>([]);
   const [reports, setReports] = useState<CitizenReportPoint[]>([]);
 
-  // 1. Fetch Blackspots and Citizen Reports for background layers
+  // 1. Fetch Crash-Prone Spots and Community Reports
   useEffect(() => {
     let active = true;
 
@@ -139,7 +141,7 @@ export default function MapView({
           }
         }
       } catch {
-        // Silently tolerate layer fetch error; map remains usable
+        // Map remains usable even if supplementary layers fail
       }
     }
 
@@ -162,7 +164,7 @@ export default function MapView({
 
     if (existing) {
       const checkLoaded = setInterval(() => {
-        const winGoogle = window.google as { maps?: unknown } | undefined;
+        const winGoogle = window.google;
         if (winGoogle?.maps) {
           clearInterval(checkLoaded);
           setMapLoaded(true);
@@ -182,7 +184,7 @@ export default function MapView({
     };
 
     script.onerror = () => {
-      setLoadError("Failed to load Google Maps JavaScript API. Using list-only accessible mode.");
+      setLoadError("Could not load Google Maps JavaScript API. Operating in accessible list mode.");
     };
 
     document.head.appendChild(script);
@@ -209,14 +211,14 @@ export default function MapView({
     }
   }, [mapLoaded, center.lat, center.lng]);
 
-  // 4. Update Markers & Polylines when data or toggles change
+  // 4. Update Markers & Polylines with Road-Sign Vocabulary
   useEffect(() => {
     const maps = window.google?.maps;
     if (!mapInstanceRef.current || !maps) return;
 
     const map = mapInstanceRef.current;
 
-    // Clear previous markers and polylines
+    // Clear previous overlays
     markersRef.current.forEach((m) => m.setMap(null));
     markersRef.current = [];
     polylinesRef.current.forEach((p) => p.setMap(null));
@@ -225,17 +227,17 @@ export default function MapView({
     const bounds = new maps.LatLngBounds();
     let hasCoords = false;
 
-    // A. User Context Center Marker
+    // A. User Location Marker (Deep Basalt Circle)
     const userMarker = new maps.Marker({
       position: { lat: center.lat, lng: center.lng },
       map,
-      title: "Your Selected Location (Pune)",
+      title: "Your location: Shivajinagar",
       icon: {
         path: maps.SymbolPath.CIRCLE,
-        scale: 8,
-        fillColor: "#0369a1",
+        scale: 7,
+        fillColor: "#16262B",
         fillOpacity: 1,
-        strokeColor: "#ffffff",
+        strokeColor: "#FFFFFF",
         strokeWeight: 2,
       },
     });
@@ -243,28 +245,36 @@ export default function MapView({
     bounds.extend({ lat: center.lat, lng: center.lng });
     hasCoords = true;
 
-    // B. Places Result Markers
+    // B. Places Result Markers (Highway Blue with Numbers)
     places.forEach((rp, idx) => {
       const lat = rp.place.lat;
       const lng = rp.place.lng;
       const marker = new maps.Marker({
         position: { lat, lng },
         map,
-        title: `${idx + 1}. ${rp.place.name} (Score: ${rp.score}/100)`,
+        title: `${rp.place.name} (Score: ${rp.score}/100)`,
         label: {
           text: String(idx + 1),
-          color: "#ffffff",
+          color: "#FFFFFF",
           fontWeight: "bold",
-          fontSize: "12px",
+          fontSize: "11px",
+        },
+        icon: {
+          path: maps.SymbolPath.CIRCLE,
+          scale: 10,
+          fillColor: "#0B5CAD",
+          fillOpacity: 1,
+          strokeColor: "#FFFFFF",
+          strokeWeight: 2,
         },
       });
 
       const infoWindow = new maps.InfoWindow({
         content: `
-          <div style="padding: 4px; font-family: sans-serif; color: #0f172a;">
+          <div style="padding: 4px; font-family: sans-serif; color: #16262B;">
             <strong>${rp.place.name}</strong>
-            <div style="font-size: 12px; margin-top: 2px;">Score: <b>${rp.score}/100</b> &bull; Rating: ${rp.place.rating ?? "No data"}/5</div>
-            <div style="font-size: 11px; color: #475569; margin-top: 4px;">${rp.reasons.slice(0, 2).join(". ")}</div>
+            <div style="font-size: 12px; margin-top: 2px;">Score: ${rp.score}/100, Rating: ${rp.place.rating ?? "No data"}/5</div>
+            <div style="font-size: 11px; color: #425257; margin-top: 3px;">${rp.reasons.slice(0, 2).join(". ")}</div>
           </div>
         `,
       });
@@ -278,18 +288,18 @@ export default function MapView({
       hasCoords = true;
     });
 
-    // C. Accident Blackspots Layer
+    // C. Crash-Prone Spots Layer (Red Warning Triangle)
     if (showBlackspots) {
       blackspots.forEach((bs) => {
         const marker = new maps.Marker({
           position: { lat: bs.lat, lng: bs.lng },
           map,
-          title: `Known road-crash location: ${bs.name}`,
+          title: `Crash-prone spot: ${bs.name}`,
           icon: {
-            path: "M 0,-10 L 9,8 L -9,8 Z", // Triangle warning shape
-            fillColor: "#dc2626",
-            fillOpacity: 0.9,
-            strokeColor: "#ffffff",
+            path: "M 0,-10 L 9,8 L -9,8 Z", // Triangle glyph
+            fillColor: "#C62828",
+            fillOpacity: 1,
+            strokeColor: "#FFFFFF",
             strokeWeight: 1.5,
             scale: 1.2,
           },
@@ -297,10 +307,10 @@ export default function MapView({
 
         const info = new maps.InfoWindow({
           content: `
-            <div style="padding: 4px; font-family: sans-serif; color: #991b1b;">
-              <strong style="color: #b91c1c;">⚠️ Known road-crash location</strong>
+            <div style="padding: 4px; font-family: sans-serif; color: #16262B;">
+              <strong style="color: #C62828;">Crash-prone spot (police audit)</strong>
               <div style="font-size: 13px; font-weight: 600; margin-top: 2px;">${bs.name}</div>
-              <div style="font-size: 11px; color: #475569; margin-top: 2px;">Documented crashes: ${bs.crashCount ?? "Listed in police audit"}</div>
+              <div style="font-size: 11px; color: #425257; margin-top: 2px;">Documented crashes: ${bs.crashCount ?? "Listed in traffic audit"}</div>
             </div>
           `,
         });
@@ -313,29 +323,29 @@ export default function MapView({
       });
     }
 
-    // D. Citizen Reports Layer
+    // D. Reports from People Nearby (Amber Circle)
     if (showCitizenReports) {
       reports.forEach((rep) => {
         const marker = new maps.Marker({
           position: { lat: rep.lat, lng: rep.lng },
           map,
-          title: `Citizen Report: ${rep.summary || rep.category}`,
+          title: `Report from person nearby: ${rep.summary || rep.category}`,
           icon: {
-            path: maps.SymbolPath.FORWARD_CLOSED_ARROW,
-            scale: 4,
-            fillColor: "#ea580c",
-            fillOpacity: 0.9,
-            strokeColor: "#ffffff",
-            strokeWeight: 1,
+            path: maps.SymbolPath.CIRCLE,
+            scale: 5,
+            fillColor: "#F2B705",
+            fillOpacity: 1,
+            strokeColor: "#16262B",
+            strokeWeight: 1.5,
           },
         });
 
         const info = new maps.InfoWindow({
           content: `
-            <div style="padding: 4px; font-family: sans-serif; color: #0f172a;">
-              <strong style="color: #c2410c;">Community Hazard (${rep.status})</strong>
+            <div style="padding: 4px; font-family: sans-serif; color: #16262B;">
+              <strong>Report from person nearby (${rep.status})</strong>
               <div style="font-size: 12px; margin-top: 2px;">${rep.summary || rep.category}</div>
-              <div style="font-size: 11px; color: #475569; margin-top: 2px;">Severity level: ${rep.severity}/3 (approx ~100m)</div>
+              <div style="font-size: 11px; color: #425257; margin-top: 2px;">Severity level: ${rep.severity}/3 (approx ~100m)</div>
             </div>
           `,
         });
@@ -348,18 +358,18 @@ export default function MapView({
       });
     }
 
-    // E. Route Polylines
+    // E. Route Polylines (Solid Slate vs Dashed Green)
     if (routes) {
       const isFastestActive = selectedRouteType === "fastest";
 
-      // 1. Fastest Route (Solid Blue)
+      // 1. Fastest Route (Solid Slate Blue)
       if (routes.fastest?.polyline?.length) {
         const fastestPath = routes.fastest.polyline.map((p) => ({ lat: p.lat, lng: p.lng }));
         const fastestPolyline = new maps.Polyline({
           path: fastestPath,
           geodesic: true,
-          strokeColor: "#2563eb",
-          strokeOpacity: isFastestActive ? 0.95 : 0.5,
+          strokeColor: "#355061",
+          strokeOpacity: isFastestActive ? 1 : 0.5,
           strokeWeight: isFastestActive ? 6 : 4,
           zIndex: isFastestActive ? 20 : 10,
           map,
@@ -374,7 +384,7 @@ export default function MapView({
         hasCoords = true;
       }
 
-      // 2. Fewest Hazards Route (Dashed Emerald Green)
+      // 2. Fewer Known Hazards Route (Dashed Highway Green)
       if (routes.fewestHazards?.polyline?.length) {
         const fewestPath = routes.fewestHazards.polyline.map((p) => ({ lat: p.lat, lng: p.lng }));
         const isFewestActive = selectedRouteType === "fewest_hazards";
@@ -382,7 +392,7 @@ export default function MapView({
         const dashedPolyline = new maps.Polyline({
           path: fewestPath,
           geodesic: true,
-          strokeColor: "#059669",
+          strokeColor: "#0E7A4B",
           strokeOpacity: 0,
           strokeWeight: isFewestActive ? 6 : 4,
           icons: [
@@ -390,7 +400,7 @@ export default function MapView({
               icon: {
                 path: "M 0,-1 0,1",
                 strokeOpacity: isFewestActive ? 1 : 0.6,
-                strokeColor: "#059669",
+                strokeColor: "#0E7A4B",
                 scale: isFewestActive ? 4 : 3,
               },
               offset: "0",
@@ -411,9 +421,9 @@ export default function MapView({
       }
     }
 
-    // Fit map bounds if routes or places are displayed
+    // Fit map bounds if routes or places are active
     if (hasCoords && (places.length > 0 || routes)) {
-      map.fitBounds(bounds, { top: 40, right: 40, bottom: 40, left: 40 });
+      map.fitBounds(bounds, { top: 30, right: 30, bottom: 30, left: 30 });
     }
   }, [
     mapLoaded,
@@ -432,90 +442,88 @@ export default function MapView({
   return (
     <section
       role="region"
-      aria-label="Interactive Pune City Map"
-      className="relative rounded-xl border border-surface-border bg-surface overflow-hidden shadow-xs flex flex-col"
+      aria-label="Pune city map"
+      className={`relative border border-border bg-ground flex flex-col ${className}`}
     >
-      {/* Skip Map Link for Accessibility (WCAG 2.4.1 Bypass Blocks) */}
+      {/* Skip Map Link for Accessibility (WCAG 2.4.1) */}
       <a href="#assistant-results" className="skip-link">
         Skip map to results list
       </a>
 
-      {/* Layer Controls Header */}
-      <div className="p-3 bg-surface border-b border-surface-border flex flex-wrap items-center justify-between gap-3 text-xs">
+      {/* Layer Controls & Overlaid Road Sign Legend */}
+      <div className="p-2.5 bg-surface border-b border-border flex flex-wrap items-center justify-between gap-3 text-xs">
         <fieldset className="flex items-center gap-4">
-          <legend className="sr-only">Map layer visibility toggles</legend>
-          <label className="inline-flex items-center gap-1.5 cursor-pointer font-medium text-foreground">
+          <legend className="sr-only">Layer visibility toggles</legend>
+          <label className="inline-flex items-center gap-1.5 cursor-pointer font-semibold text-ink">
             <input
               type="checkbox"
               checked={showBlackspots}
               onChange={(e) => setShowBlackspots(e.target.checked)}
-              className="rounded border-surface-border text-red-600 focus:ring-brand-primary h-4 w-4"
+              className="w-4 h-4 text-crash-red border-border rounded-xs focus:ring-sign-blue"
             />
             <span className="flex items-center gap-1">
-              <span aria-hidden="true" className="text-red-600 font-bold">
+              <span aria-hidden="true" className="text-crash-red font-bold">
                 ▲
               </span>
-              <span>Blackspots ({blackspots.length})</span>
+              <span>Crash-prone spots ({blackspots.length})</span>
             </span>
           </label>
 
-          <label className="inline-flex items-center gap-1.5 cursor-pointer font-medium text-foreground">
+          <label className="inline-flex items-center gap-1.5 cursor-pointer font-semibold text-ink">
             <input
               type="checkbox"
               checked={showCitizenReports}
               onChange={(e) => setShowCitizenReports(e.target.checked)}
-              className="rounded border-surface-border text-orange-600 focus:ring-brand-primary h-4 w-4"
+              className="w-4 h-4 text-caution border-border rounded-xs focus:ring-sign-blue"
             />
             <span className="flex items-center gap-1">
-              <span aria-hidden="true" className="text-orange-600 font-bold">
-                ➔
-              </span>
-              <span>Citizen Reports ({reports.length})</span>
+              <span
+                aria-hidden="true"
+                className="w-2.5 h-2.5 rounded-full bg-caution inline-block border border-ink"
+              />
+              <span>Reports from people nearby ({reports.length})</span>
             </span>
           </label>
         </fieldset>
 
+        {/* Legend for active routes */}
         {routes && (
-          <div className="flex items-center gap-3 font-medium text-text-muted">
+          <div className="flex items-center gap-3 font-semibold text-ink-muted text-[11px]">
             <span className="inline-flex items-center gap-1">
-              <span className="w-3 h-1 bg-blue-600 inline-block rounded" aria-hidden="true" />
+              <span className="w-3 h-1 bg-route-fast inline-block" aria-hidden="true" />
               <span>Solid: Fastest</span>
             </span>
             <span className="inline-flex items-center gap-1">
               <span
-                className="w-3 h-1 border-b-2 border-dashed border-emerald-600 inline-block"
+                className="w-3 h-1 border-b-2 border-dashed border-route-green inline-block"
                 aria-hidden="true"
               />
-              <span>Dashed: Fewest Hazards</span>
+              <span>Dashed: Fewer hazards</span>
             </span>
           </div>
         )}
       </div>
 
       {/* Map Canvas / Fallback Notice */}
-      <div className="relative w-full h-[360px] sm:h-[460px] bg-slate-100 dark:bg-slate-900">
+      <div className="relative w-full flex-1 min-h-[340px] bg-ground">
         {effectiveError ? (
-          <div className="absolute inset-0 p-6 flex flex-col items-center justify-center text-center bg-amber-50 dark:bg-amber-950/20 text-amber-900 dark:text-amber-200">
-            <p className="font-semibold text-base mb-1">Interactive Map Unavailable</p>
-            <p className="text-sm max-w-md">{effectiveError}</p>
-            <p className="text-xs text-text-muted mt-3">
-              Puneri Safar continues operating in text-first accessible mode. All recommendations
-              and hazard ratings remain complete below.
+          <div className="absolute inset-0 p-6 flex flex-col items-center justify-center text-center bg-surface border-l-4 border-caution text-ink">
+            <p className="font-bold text-sm mb-1">Interactive map unavailable</p>
+            <p className="text-xs text-ink-muted max-w-md">{effectiveError}</p>
+            <p className="text-xs text-ink-muted mt-2">
+              Puneri Safar continues in text-first mode. All routes, hazard ratings, and places are
+              listed below.
             </p>
           </div>
         ) : !mapLoaded ? (
-          <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-text-muted text-sm">
-            <div
-              className="w-6 h-6 border-2 border-brand-primary border-t-transparent rounded-full animate-spin"
-              aria-hidden="true"
-            />
-            <span>Loading Pune vector map canvas...</span>
+          <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 text-ink-muted text-xs">
+            <span>Loading Pune city map canvas...</span>
           </div>
         ) : null}
 
         <div
           ref={mapContainerRef}
-          className="w-full h-full"
+          className="w-full h-full min-h-[340px]"
           tabIndex={0}
           aria-label="Map Canvas - Use keyboard controls or pan and zoom controls"
         />
